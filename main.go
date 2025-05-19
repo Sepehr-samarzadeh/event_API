@@ -4,10 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"sep.com/eventapi/db"
 	"sep.com/eventapi/models"
 )
 
 func main() {
+	db.InitDB()
+
 	server := gin.Default()
 	server.GET("/events", getEvents) //set handler for get request
 	server.POST("/events", createEvent)
