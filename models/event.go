@@ -41,6 +41,40 @@ func (e Event) Save() error {
 
 }
 
-func GetAllEvents() []Event {
-	return events
+func GetAllEvents() ([]Event, error) {
+	query := "SELECT * FROM events"
+	rows, err := db.DB.Query(query) // use Exec when we  want to add something (change to db) && use query when you want to fetch it
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close() //make sure its close when accessing it
+
+	var events []Event
+
+	for rows.Next() { //next will keep the loop running as long as  we have rows to read
+		var even Event
+		err := rows.Scan(&even.ID, &even.Name, &even.Description, &even.Location, &even.DateTime, &even.UserID)
+
+		if err != nil {
+			return nil, err
+		}
+
+		events = append(events, even)
+
+	}
+	return events, nil
+}
+
+func GetEventByID(id int64) (*Event, error) {
+	query := "SELECT * FROM events WHERE id = ? "
+	row := db.DB.QueryRow(query, id) //since we only need the row with specific id not bunch of rows
+	var event Event
+	err := row.Scan(&event.ID, &event.Name, &event.Description, &event.Location, &event.DateTime, &event.UserID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &event, nil
 }
