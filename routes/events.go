@@ -32,6 +32,13 @@ func getEvent(context *gin.Context) {
 }
 
 func createEvent(context *gin.Context) { //when we use endpoint handler we are forced to use gin.context
+	token := context.Request.Header.Get("Authorization")
+
+	if token == "" {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized!"})
+		return
+	}
+
 	var event models.Event
 	err := context.ShouldBindJSON(&event)
 

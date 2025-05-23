@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"sep.com/eventapi/models"
+	"sep.com/eventapi/utils"
 )
 
 func signup(context *gin.Context) {
@@ -42,6 +43,13 @@ func login(context *gin.Context) {
 		return
 	}
 
-	context.JSON(http.StatusOK, gin.H{"message": "login successful!"})
+	token, err := utils.GenerateToken(user.Email, user.ID)
+
+	if err != nil {
+		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not authenticate user "})
+		return
+	}
+
+	context.JSON(http.StatusOK, gin.H{"message": "login successful!", "token": token})
 
 }
