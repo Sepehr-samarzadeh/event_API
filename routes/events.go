@@ -6,7 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"sep.com/eventapi/models"
-	"sep.com/eventapi/utils"
 )
 
 func getEvents(context *gin.Context) {
@@ -33,25 +32,16 @@ func getEvent(context *gin.Context) {
 }
 
 func createEvent(context *gin.Context) { //when we use endpoint handler we are forced to use gin.context
-	token := context.Request.Header.Get("Authorization")
-
-	if token == "" {
-		context.JSON(http.StatusUnauthorized, gin.H{"message": "not authorized!"})
-		return
-	}
-	userId, err := utils.VerifyToken(token)
-	if err != nil {
-		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized!"})
-		return
-	}
 
 	var event models.Event
-	err = context.ShouldBindJSON(&event)
+	err := context.ShouldBindJSON(&event)
 
 	if err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "failed to parse data"})
 		return
 	}
+
+	userId := context.GetInt64("userId")
 
 	event.UserID = userId
 	err = event.Save()
@@ -69,10 +59,16 @@ func updateEvent(context *gin.Context) {
 		return
 	}
 
-	_, err = models.GetEventByID(eventID)
+	userId := context.GetInt64("userId")
+	event, err := models.GetEventByID(eventID)
 
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch event"})
+		return
+	}
+
+	if event.UserID != userId {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to update event"})
 		return
 	}
 
@@ -98,10 +94,18 @@ func deleteEvent(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, gin.H{"message": "could not parse event id"})
 		return
 	}
+
+	userId := context.GetInt64("userId")
+
 	event, err := models.GetEventByID(eventID)
 
 	if err != nil {
 		context.JSON(http.StatusInternalServerError, gin.H{"message": "could not fetch event"})
+		return
+	}
+
+	if event.UserID != userId {
+		context.JSON(http.StatusUnauthorized, gin.H{"message": "Not authorized to delete event"})
 		return
 	}
 
